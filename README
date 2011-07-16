@@ -1,0 +1,48 @@
+Introduction
+==============
+This mini-project was born due to a requirement in a project
+for my employer. The idea was to be able to conduct multi-collection
+queries across MongoDB (not necessarily efficiently, i'm afraid).
+
+At the time of this writing, MongoDB and other NoSQL databases do not
+support the concept of cross/multi-collection queries (which is a shame
+really) and my work was to explore that space and see what can be done.
+
+Also, i didn't want to use the MongoDB syntax because it was kind of 
+alien and i was afraid SQL stalwarts won't like it hence another aspect
+of this project was to build a parser that was able to parse SQL-like
+expressions/statements (depending on your inclination of parlance)
+
+Challenges
+==============
+Building the parser was relatively simple, i guess, and i was greatly aided
+by PyParsing module (http://pyparsing.wikispaces.com) and i totally credit
+the creators of that module for a job well done. ossm that i breathe this
+space...enough of digression.
+
+Building the multi-collection querying, i had 2 options. Option 1 was to 
+use MongoDB's MapReduce mechanism but that didn't work well because there
+wasn't any conceivable way (at least to me) i could bypass the 'reduce'
+phase and found out i hit the jira https://jira.mongodb.org/browse/SERVER-142. 
+Option 2 was to apply a kind of cross product to N collections. Obviously runtime / spacetime suck. This is disgraceful. No excuses, whatsoever. But
+this does work, for now at least as usage hasn't picked up yet though i do
+expect things to pick up and i'll rework it.
+
+What doesn't work
+==================
+At this time, you can do queries like this
+
+SELECT A.a, A.b, B.a, B.b from A, B where A.a in (val1,val2) and B.a = 12 and A.a = B.a
+
+Take note that you can only put in literals and static values. Dynamic 
+computation is not supported at this time.
+
+Notes
+==================
+If you are interested, just check out the python code and read the 
+docstrings i've wrote.
+
+
+Regards,
+Raymond Tay
+15 July 2011
