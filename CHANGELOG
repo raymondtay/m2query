@@ -1,0 +1,14 @@
+19 July 2011
+==============
+1. Added support to allow LIMIT expressions. Either LIMIT(indx1, indx2) specifies a range
+   you can use to return the rows/records between indx1 and indx2; LIMIT(indx) specifies
+   you want to return the first indx records/rows.
+
+15 July 2011
+==============
+1. Initial check in
+2. Supports SQL SELECT syntax only. You can enter expressions like 'select a.* from a'
+   'select a.*, b.* from a,b' ,
+   'select a.col1, b.col1 from a,b where a.col2 = b.col2' ,
+3. You should be able to run queries involving N collections/tables with simple queries
+
