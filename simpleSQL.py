@@ -12,6 +12,7 @@ def test( str ):
         print "tokens.columns =", tokens.columns
         print "tokens.tables =",  tokens.tables
         print "tokens.where =", tokens.where
+        print "tokens.limit =", tokens.limit
     except ParseException, err:
         print " "*err.loc + "^\n" + err.msg
         print err
@@ -33,9 +34,10 @@ def parse(str):
 #
 # SQL keywords supported 'SELECT', 'FROM'
 #
-selectStmt = Forward()
-selectToken = Keyword("select", caseless=True)
-fromToken   = Keyword("from", caseless=True)
+selectStmt   = Forward()
+selectToken  = Keyword("select", caseless=True)
+fromToken    = Keyword("from", caseless=True)
+limitToken   = Keyword("limit", caseless=True)
 
 #
 # Grammar for capturing IDENTIFIERS
@@ -68,16 +70,17 @@ whereCondition = Group(
     ( columnName + binop + columnRval ) |
     ( columnName + in_ + "(" + delimitedList( columnRval ) + ")" ) |
     ( columnName + in_ + "(" + selectStmt + ")" ) |
-    ( "(" + whereExpression + ")" )
+    ( "(" + whereExpression + ")" ) 
     )
-whereExpression << whereCondition + ZeroOrMore( ( and_ | or_ ) + whereExpression ) 
+whereExpression << whereCondition + ZeroOrMore( ( and_ | or_ ) + whereExpression )
 
 # define the grammar
 selectStmt      << ( selectToken + 
                    ( '*' | columnNameList ).setResultsName( "columns" ) + 
                    fromToken + 
                    tableNameList.setResultsName( "tables" ) + 
-                   Optional( Group( CaselessLiteral("where") + whereExpression ), "" ).setResultsName("where") )
+                   Optional( Group( CaselessLiteral("where") + whereExpression ), "" ).setResultsName("where") + 
+                   Optional( limitToken + "(" + Word(nums) + Optional("," + Word(nums) ) + ")" ).setResultsName("limit") )
 
 simpleSQL = selectStmt
 

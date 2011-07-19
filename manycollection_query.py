@@ -54,6 +54,8 @@ test4 = "select A.Title, A.author, A.date, B.Title, B.author, B.date from A, B w
 test5 = 'select A.author, A.Title, B.author, B.Title from A, B where A.author = B.author'
 test6 = 'select A.author, A.Title, A.date, B.author, B.Title, B.date from A, B where A.author = B.author and A.date = B.date'
 test7 = 'select A.author, B.author, C.author from A, B, C where A.author = B.author and B.author = C.author'
+test8 = 'select A.Title, A.author from A limit (4,8)'
+test9 = 'select A.Title, A.author from A limit (4)'
 
 DEBUG = False
 
@@ -145,6 +147,18 @@ def findRangeOps(tablename, tokens):
         return tablename, filters
     return '',filters
 
+def findLimit(tablename, tokens):
+    """
+       Locate the expression that does corresponds to LIMIT (start, stop)
+    """
+    limitFound = re.findall('limit|LIMIT', tokens)
+
+def findAggFunctions():
+    """
+       Locate the expressions that does AVG, COUNT, MAX, MIN
+    """
+    pass
+
 def findComparisonOps(tablename, tokens):
     """
        Search/Populate filter templates for expressions like
@@ -182,6 +196,7 @@ def runQuery(query, database, username=None, output=None, password=None, port=27
        database          - name of database to connect to
     """
     tokens = parseSQL(query)
+    print "\nTOKENS-> %s\n" % tokens
     selectors,queries = constructMongoQuery(tokens) 
 
     #
@@ -209,9 +224,9 @@ def runQuery(query, database, username=None, output=None, password=None, port=27
         except Exception, e:
             print "\nrunQuery: Error caught while in MongoDB, msg %s" % e
         conn.disconnect()
-    final = computeJoin(records, queries, tokens.tables)
-    writeToDisk(final, 'raymond', 'raymond_datafile') if final else None
-    #writeToDisk(final, username, output) if final else None
+    final = computeJoin(records, queries, tokens.tables, tokens.limit)
+    #writeToDisk(final, 'raymond', 'raymond_datafile') if final else None
+    writeToDisk(final, username, output) if final else None
 
     return final
 
@@ -238,11 +253,14 @@ def writeToDisk(records, username, output):
     except Exception, e:
         print '\nwriteToDisk:%s' % e
 
-def computeJoin(records, queries, tables):
+def computeJoin(records, queries, tables, limit):
     """
        Return a collection of records where the 'JOIN'
        query a.k.a <table>.<col> binop <table2>.<col>
        makes sense.
+	   
+	   Now supports the notation LIMIT <range> or LIMIT <num>
+       where <range> = (i, j) and <num> returns the first 'num' records
     """
     final = [] # will contain all documents that matched across the tables
   
@@ -279,9 +297,24 @@ def computeJoin(records, queries, tables):
                         if binop == '$gt': cmpFn = lambda x,y : x > y
                         if binop == '$gte': cmpFn = lambda x,y : x >= y
                         final = [rec1 for rec1 in table1 for rec2 in table2 if cmpFn(rec1[col1],rec2[col2])]       
-    print 'final: %s' % final
+    final = computeLimit(final, limit) if limit else final
+    #print 'final: %s' % final
     return final
 
+def computeLimit(records, limit):
+    """
+	   Now supports the notation LIMIT <range> or LIMIT <num>
+       where <range> = (i, j) and <num> returns the first 'num' records
+    """
+    start = 0
+    end   = 0
+	if len(limit) == 4: start = limit[2]
+    start, end = limit[2], limit[4] if len(limit) == 6 else None
+
+	if not end:
+        return records[start-1:end-1]
+    else:
+        return records[0:start-1]
         
 def getQuery(queries,tablename, tables):
     """
@@ -323,4 +356,5 @@ def getQuery(queries,tablename, tables):
     return ret
 
 if __name__ == '__main__':
-   runQuery(test3, 'testing')
+   runQuery(test9, 'testing')
+#   simpleSQL.test(test9)
